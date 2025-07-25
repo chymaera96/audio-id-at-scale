@@ -6,14 +6,16 @@ import pytorch_lightning as pl
 
 
 class FingerprintDataset(Dataset):
-    def __init__(self, npy_path):
+    def __init__(self, path):
         """
         Args:
             npy_path: Path to .npy file (fingerprints shape: [N, 128])
         """
-        assert os.path.exists(npy_path), f"File not found: {npy_path}"
-        self.memmap = np.load(npy_path, mmap_mode='r')
-        assert self.memmap.ndim == 2 and self.memmap.shape[1] == 128, "Expected shape (N, 128)"
+        mm_path = os.path.join(path, 'dummy_db.mm')
+        assert os.path.exists(mm_path), f"File not found: {mm_path}"
+        self.shape = np.load(os.path.join(path, 'dummy_db_shape.npy'))
+        self.memmap = np.memmap(mm_path, dtype=np.float32, mode='r', shape=(self.shape[0], self.shape[1]))
+        assert self.memmap.shape[1] == 128, "Expected shape (N, 128)"
 
     def __len__(self):
         return self.memmap.shape[0]
