@@ -20,34 +20,81 @@ class SinusoidalTimeEmbedding(nn.Module):
         return torch.cat([torch.sin(angle_rates), torch.cos(angle_rates)], dim=-1)  # (B, dim)
 
 
-class RectifiedFlowMLP(nn.Module):
-    def __init__(self, input_dim=128, time_embed_dim=32, hidden_dim=512, depth=5):
-        """
-        Args:
-            input_dim: Dimensionality of the fingerprint vector
-            time_embed_dim: Dimensionality of time embedding
-            hidden_dim: Width of each hidden layer
-            depth: Number of hidden layers
-        """
+class AdaptiveNorm(nn.Module):
+    def __init__(self, dim, cond_dim):
         super().__init__()
-        self.time_embed = SinusoidalTimeEmbedding(time_embed_dim)
+        self.norm = nn.LayerNorm(dim)
+        self.to_scale = nn.Linear(cond_dim, dim)
+        self.to_shift = nn.Linear(cond_dim, dim)
 
-        layers = []
-        in_dim = input_dim + time_embed_dim
+    def forward(self, x, cond):
+        x = self.norm(x)
+        scale = self.to_scale(cond)
+        shift = self.to_shift(cond)
+        return x * (1 + scale) + shift
 
-        for i in range(depth):
-            layers.append(nn.Linear(in_dim if i == 0 else hidden_dim, hidden_dim))
-            layers.append(nn.SiLU())
 
-        layers.append(nn.Linear(hidden_dim, input_dim))  # Final layer: predict velocity
+# MLP Layer
+class MLP(nn.Module):
+    def __init__(self, dim, mlp_mult=4, cond_dim=None, dropout=0.):
+        super(MLP, self).__init__()
+        self.ff = Feedforward(dim=dim, mlp_mult=mlp_mult, dropout=dropout)
+        self.norm = AdaptiveNorm(dim, cond_dim)
 
-        self.net = nn.Sequential(*layers)
+    def forward(self, x, cond=None):
+        inp = x
+        x = self.norm(x, cond)
+        x = self.ff(x)
+        return x+inp
 
-    def forward(self, x, t):
-        """
-        x: (batch, input_dim) → noisy fingerprint
-        t: (batch,) → timestep in [0, 1]
-        """
-        t_embed = self.time_embed(t)  # (batch, time_embed_dim)
-        x_input = torch.cat([x, t_embed], dim=-1)
-        return self.net(x_input)
+
+class Feedforward(nn.Module):
+    def __init__(self, dim, mlp_mult=4, dropout=0.):
+        super().__init__()
+        inner_dim = int(dim * mlp_mult)
+        dim_out = dim
+
+        self.activation = nn.SiLU()
+        self.to_mlp = nn.Linear(dim, inner_dim, bias=False)
+        self.to_out = nn.Linear(inner_dim//2, dim_out, bias=False)
+        self.do = nn.Dropout(dropout)
+
+    def forward(self, x):
+        x = self.to_mlp(x)
+        x1,x2 = x.chunk(2, dim=-1)
+        x = self.activation(x1) * x2
+        x = self.do(x)
+        x = self.to_out(x)
+        return x
+
+
+class RectfiedFlowMLP(nn.Module):
+    def __init__(self, input_dim, output_dim, cond_dim=None, dim=768, num_layers=12, mlp_mult=4, dropout=0.):
+        super().__init__()
+
+        self.linear_input = nn.Linear(input_dim, dim)
+        self.norm_output = AdaptiveNorm(dim, cond_dim=cond_dim)
+        self.linear_output = nn.Linear(dim, output_dim)
+
+        if cond_dim is None:
+            raise ValueError("Dimensionality of conditioning cond_dim must be provided!")
+
+        self.layers = nn.ModuleList([
+            MLP(dim, mlp_mult=mlp_mult, cond_dim=cond_dim, dropout=dropout) for _ in range(num_layers)
+        ])
+
+    def forward(self, x, cond):
+        # x: noisy samples with shape (batch_size, ..., channels)
+        # cond: conditioning information with shape (batch_size, channels).
+
+        # get input features
+        x = self.linear_input(x)
+
+        for i in range(len(self.layers)):
+            x = self.layers[i](x, cond)
+
+        # get output
+        x = self.norm_output(x, cond)
+        x = self.linear_output(x)
+
+        return x

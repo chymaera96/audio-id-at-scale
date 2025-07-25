@@ -6,7 +6,7 @@ import scipy
 import numpy as np
 from pytorch_lightning.loggers import WandbLogger
 
-from modules.model import RectifiedFlowMLP
+from modules.model import RectifiedFlowMLP, SinusoidalTimeEmbedding
 from modules.data import FingerprintDataset
 from torch.utils.data import DataLoader
 
@@ -39,12 +39,14 @@ class PLRectifiedFlow(pl.LightningModule):
 
         self.model = RectifiedFlowMLP(
             input_dim=config.input_dim,
-            time_embed_dim=config.time_embed_dim,
-            hidden_dim=config.hidden_dim,
-            depth=config.depth
+            output_dim=config.input_dim,
+            cond_dim=config.time_embed_dim,
+            dim=config.hidden_dim,
+            num_layers=config.depth
         )
         self.loss_fn = nn.MSELoss()
         self.real_fingerprints = real_fingerprints.to(self.device)
+        self.time_embed = SinusoidalTimeEmbedding(config.time_embed_dim)
 
     def add_noise(self, x0, t):
         noise = torch.randn_like(x0)
@@ -52,7 +54,8 @@ class PLRectifiedFlow(pl.LightningModule):
         return xt, x0 - xt  
 
     def forward(self, x_t, t):
-        return self.model(x_t, t)
+        cond = self.time_embed(t)
+        return self.model(x_t, cond)
 
     def training_step(self, batch, batch_idx):
         x0 = batch
@@ -69,7 +72,7 @@ class PLRectifiedFlow(pl.LightningModule):
     def on_train_epoch_end(self):
         self.compute_fad()
 
-    def compute_fad(self, num_samples=1000, num_steps=32):
+    def compute_fad(self, num_samples=10000, num_steps=32):
         self.model.eval()
         with torch.no_grad():
             x_t = torch.randn(num_samples, self.config.input_dim, device=self.device)
@@ -77,11 +80,13 @@ class PLRectifiedFlow(pl.LightningModule):
 
             for t in t_vals:
                 t_batch = torch.full((num_samples,), t, device=self.device)
-                v = self.model(x_t, t_batch)
+                v = self(x_t, t_batch)
                 x_t = x_t + (1.0 / num_steps) * v  # Euler step
 
             x_gen = x_t
-            x_real = self.real_fingerprints[:num_samples].to(self.device)
+            # Sample real fingerprints
+            indices = torch.randint(0, self.real_fingerprints.shape[0], (num_samples,), device=self.device)
+            x_real = self.real_fingerprints[indices]
 
             mu_gen, sigma_gen = x_gen.mean(0), torch.cov(x_gen.T)
             mu_real, sigma_real = x_real.mean(0), torch.cov(x_real.T)
@@ -119,8 +124,8 @@ if __name__ == "__main__":
     parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--time_embed_dim", type=int, default=32)
-    parser.add_argument("--hidden_dim", type=int, default=1024)
     parser.add_argument("--input_dim", type=int, default=128)
+    parser.add_argument("--hidden_dim", type=int, default=768)
     parser.add_argument("--depth", type=int, default=12)
     parser.add_argument("--project", type=str, default="audio-id-at-scale")
     parser.add_argument("--out_dir", type=str, default="checkpoints")
