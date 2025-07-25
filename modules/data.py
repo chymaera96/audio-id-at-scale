@@ -22,7 +22,7 @@ class FingerprintDataset(Dataset):
 
     def __getitem__(self, idx):
         fp = self.memmap[idx]  
-        return torch.from_numpy(fp).float()
+        return torch.from_numpy(fp.copy()).float()
 
 
 class FingerprintDataModule(pl.LightningDataModule):
