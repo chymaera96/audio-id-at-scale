@@ -40,7 +40,7 @@ class PLRectifiedFlow(pl.LightningModule):
     def add_noise(self, x0, t):
         noise = torch.randn_like(x0)
         xt = x0 + t[:, None] * noise
-        return xt, x0 - xt  # velocity target
+        return xt, x0 - xt  
 
     def forward(self, x_t, t):
         return self.model(x_t, t)
@@ -81,9 +81,6 @@ class PLRectifiedFlow(pl.LightningModule):
             self.log("train/fad", fad)
 
 
-# ----------------------------
-# Training Entry Point
-# ----------------------------
 def train(config):
     dataset = FingerprintDataset(config.data_path)
     dataloader = DataLoader(dataset, batch_size=config.batch_size, shuffle=True, num_workers=4)
@@ -115,7 +112,7 @@ if __name__ == "__main__":
     parser.add_argument("--time_embed_dim", type=int, default=32)
     parser.add_argument("--hidden_dim", type=int, default=512)
     parser.add_argument("--input_dim", type=int, default=128)
-    parser.add_argument("--project", type=str, default="rectified-flow-fingerprints")
+    parser.add_argument("--project", type=str, default="audio-id-at-scale")
     parser.add_argument("--out_dir", type=str, default="checkpoints")
     parser.add_argument("--id", type=str, default=None)
 

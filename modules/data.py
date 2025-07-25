@@ -19,7 +19,7 @@ class FingerprintDataset(Dataset):
         return self.memmap.shape[0]
 
     def __getitem__(self, idx):
-        fp = self.memmap[idx]  # shape (128,)
+        fp = self.memmap[idx]  
         return torch.from_numpy(fp).float()
 
 
