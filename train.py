@@ -40,7 +40,8 @@ class PLRectifiedFlow(pl.LightningModule):
         self.model = RectifiedFlowMLP(
             input_dim=config.input_dim,
             time_embed_dim=config.time_embed_dim,
-            hidden_dim=config.hidden_dim
+            hidden_dim=config.hidden_dim,
+            depth=config.depth
         )
         self.loss_fn = nn.MSELoss()
         self.real_fingerprints = real_fingerprints.to(self.device)
@@ -114,12 +115,13 @@ def train(config):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_path", type=str, required=True)
-    parser.add_argument("--batch_size", type=int, default=512)
+    parser.add_argument("--batch_size", type=int, default=2048)
     parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--time_embed_dim", type=int, default=32)
-    parser.add_argument("--hidden_dim", type=int, default=512)
+    parser.add_argument("--hidden_dim", type=int, default=1024)
     parser.add_argument("--input_dim", type=int, default=128)
+    parser.add_argument("--depth", type=int, default=12)
     parser.add_argument("--project", type=str, default="audio-id-at-scale")
     parser.add_argument("--out_dir", type=str, default="checkpoints")
     parser.add_argument("--id", type=str, default=None)
