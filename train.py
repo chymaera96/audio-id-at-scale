@@ -85,7 +85,7 @@ class PLRectifiedFlow(pl.LightningModule):
 
             x_gen = x_t
             # Sample real fingerprints
-            indices = torch.randint(0, self.real_fingerprints.shape[0], (num_samples,), device=self.device)
+            indices = torch.randint(0, self.real_fingerprints.shape[0], (num_samples,), device='cpu')
             x_real = self.real_fingerprints[indices]
 
             mu_gen, sigma_gen = x_gen.mean(0), torch.cov(x_gen.T)
