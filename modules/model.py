@@ -68,7 +68,7 @@ class Feedforward(nn.Module):
         return x
 
 
-class RectfiedFlowMLP(nn.Module):
+class RectifiedFlowMLP(nn.Module):
     def __init__(self, input_dim, output_dim, cond_dim=None, dim=768, num_layers=12, mlp_mult=4, dropout=0.):
         super().__init__()
 
