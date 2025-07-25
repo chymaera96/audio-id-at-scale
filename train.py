@@ -4,8 +4,8 @@ import pytorch_lightning as pl
 import argparse
 from pytorch_lightning.loggers import WandbLogger
 
-from model import RectifiedFlowMLP
-from data import FingerprintDataset
+from modules.model import RectifiedFlowMLP
+from modules.data import FingerprintDataset
 from torch.utils.data import DataLoader
 
 
