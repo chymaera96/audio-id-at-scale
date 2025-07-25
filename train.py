@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import pytorch_lightning as pl
 import argparse
+import scipy
+import numpy as np
 from pytorch_lightning.loggers import WandbLogger
 
 from modules.model import RectifiedFlowMLP
@@ -13,11 +15,17 @@ from torch.utils.data import DataLoader
 # Fréchet Distance Calculation
 # ----------------------------
 def compute_frechet_distance(mu1, sigma1, mu2, sigma2):
+    mu1, sigma1 = mu1.cpu().numpy(), sigma1.cpu().numpy()
+    mu2, sigma2 = mu2.cpu().numpy(), sigma2.cpu().numpy()
+
     diff = mu1 - mu2
-    covmean = torch.linalg.sqrtm(sigma1 @ sigma2)
-    if not torch.isfinite(covmean).all():
-        covmean = torch.eye(sigma1.shape[0], device=mu1.device)
-    return diff @ diff + torch.trace(sigma1 + sigma2 - 2 * covmean)
+    covmean, _ = scipy.linalg.sqrtm(sigma1 @ sigma2, disp=False)
+
+    if not np.isfinite(covmean).all():
+        covmean = np.eye(sigma1.shape[0])
+
+    fid = diff @ diff + np.trace(sigma1 + sigma2 - 2 * covmean)
+    return float(fid)
 
 
 # ----------------------------
