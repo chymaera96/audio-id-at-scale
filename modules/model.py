@@ -34,20 +34,6 @@ class AdaptiveNorm(nn.Module):
         return x * (1 + scale) + shift
 
 
-# MLP Layer
-class MLP(nn.Module):
-    def __init__(self, dim, mlp_mult=4, cond_dim=None, dropout=0.):
-        super(MLP, self).__init__()
-        self.ff = Feedforward(dim=dim, mlp_mult=mlp_mult, dropout=dropout)
-        self.norm = AdaptiveNorm(dim, cond_dim)
-
-    def forward(self, x, cond=None):
-        inp = x
-        x = self.norm(x, cond)
-        x = self.ff(x)
-        return x+inp
-
-
 class Feedforward(nn.Module):
     def __init__(self, dim, mlp_mult=4, dropout=0.):
         super().__init__()
@@ -61,40 +47,77 @@ class Feedforward(nn.Module):
 
     def forward(self, x):
         x = self.to_mlp(x)
-        x1,x2 = x.chunk(2, dim=-1)
+        x1, x2 = x.chunk(2, dim=-1)
         x = self.activation(x1) * x2
         x = self.do(x)
         x = self.to_out(x)
         return x
 
 
+# MLP Layer with improved residual connection
+class MLP(nn.Module):
+    def __init__(self, dim, mlp_mult=4, cond_dim=None, dropout=0.):
+        super(MLP, self).__init__()
+        self.ff = Feedforward(dim=dim, mlp_mult=mlp_mult, dropout=dropout)
+        self.norm = AdaptiveNorm(dim, cond_dim)
+        
+        # Optional: layer scale for better training stability
+        self.layer_scale = nn.Parameter(torch.ones(dim) * 1e-6)
+
+    def forward(self, x, cond=None):
+        inp = x
+        x = self.norm(x, cond)
+        x = self.ff(x)
+        # Apply layer scaling
+        x = x * self.layer_scale
+        return x + inp
+
+
 class RectifiedFlowMLP(nn.Module):
-    def __init__(self, input_dim, output_dim, cond_dim=None, dim=768, num_layers=12, mlp_mult=4, dropout=0.):
+    def __init__(self, input_dim, output_dim, time_dim=256, dim=768, 
+                 num_layers=12, mlp_mult=4, dropout=0.):
         super().__init__()
-
+        
+        # Time embedding
+        self.time_embedding = SinusoidalTimeEmbedding(time_dim)
+        
+        # Input projection
         self.linear_input = nn.Linear(input_dim, dim)
-        self.norm_output = AdaptiveNorm(dim, cond_dim=cond_dim)
-        self.linear_output = nn.Linear(dim, output_dim)
-
-        if cond_dim is None:
-            raise ValueError("Dimensionality of conditioning cond_dim must be provided!")
-
+        
+        # MLP layers with time conditioning only
         self.layers = nn.ModuleList([
-            MLP(dim, mlp_mult=mlp_mult, cond_dim=cond_dim, dropout=dropout) for _ in range(num_layers)
+            MLP(dim, mlp_mult=mlp_mult, cond_dim=time_dim, dropout=dropout) 
+            for _ in range(num_layers)
         ])
+        
+        # Output layers
+        self.norm_output = AdaptiveNorm(dim, cond_dim=time_dim)
+        self.linear_output = nn.Linear(dim, output_dim)
+        
+        # Initialize output layer to zero for better training start
+        nn.init.zeros_(self.linear_output.weight)
+        if self.linear_output.bias is not None:
+            nn.init.zeros_(self.linear_output.bias)
 
-    def forward(self, x, cond):
-        # x: noisy samples with shape (batch_size, ..., channels)
-        # cond: conditioning information with shape (batch_size, channels).
-
-        # get input features
+    def forward(self, x, t):
+        """
+        x: noisy samples with shape (batch_size, ..., input_dim)
+        t: time values with shape (batch_size,) in [0, 1]
+        """
+        # Get time embeddings
+        t_emb = self.time_embedding(t)  # (batch_size, time_dim)
+        
+        # Process input
         x = self.linear_input(x)
-
-        for i in range(len(self.layers)):
-            x = self.layers[i](x, cond)
-
-        # get output
-        x = self.norm_output(x, cond)
+        
+        # Pass through MLP layers with time conditioning
+        for layer in self.layers:
+            x = layer(x, t_emb)
+        
+        # Output with time conditioning
+        x = self.norm_output(x, t_emb)
         x = self.linear_output(x)
-
+        
         return x
+
+

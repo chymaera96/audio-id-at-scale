@@ -40,13 +40,13 @@ class PLRectifiedFlow(pl.LightningModule):
         self.model = RectifiedFlowMLP(
             input_dim=config.input_dim,
             output_dim=config.input_dim,
-            cond_dim=config.time_embed_dim,
+            time_dim=config.time_embed_dim,
             dim=config.hidden_dim,
             num_layers=config.depth
         )
         self.loss_fn = nn.MSELoss()
         self.real_fingerprints = real_fingerprints.to(self.device)
-        self.time_embed = SinusoidalTimeEmbedding(config.time_embed_dim)
+        # self.time_embed = SinusoidalTimeEmbedding(config.time_embed_dim)
 
     def add_noise(self, x0, t):
         noise = torch.randn_like(x0)
@@ -54,7 +54,8 @@ class PLRectifiedFlow(pl.LightningModule):
         return xt, x0 - xt  
 
     def forward(self, x_t, t):
-        cond = self.time_embed(t)
+        # cond = self.time_embed(t)
+        cond = t
         return self.model(x_t, cond)
 
     def training_step(self, batch, batch_idx):
