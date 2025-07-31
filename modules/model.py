@@ -91,16 +91,22 @@ class RectifiedFlowMLP(nn.Module):
         self.linear_input = nn.Linear(input_dim, dim)
         
         # MLP layers with time conditioning only
+        # self.layers = nn.ModuleList([
+        #     MLP(dim, mlp_mult=mlp_mult, 
+        #         cond_dim=time_dim if i == 0 else None, 
+        #         dropout=dropout) 
+        #     for i in range(num_layers)
+        # ])
         self.layers = nn.ModuleList([
             MLP(dim, mlp_mult=mlp_mult, 
-                cond_dim=time_dim if i == 0 else None, 
+                cond_dim=time_dim, 
                 dropout=dropout) 
             for i in range(num_layers)
         ])
         
         # Output layers
-        # self.norm_output = AdaptiveNorm(dim, cond_dim=time_dim)
-        self.norm_output = nn.LayerNorm(dim)
+        self.norm_output = AdaptiveNorm(dim, cond_dim=time_dim)
+        # self.norm_output = nn.LayerNorm(dim)
         self.linear_output = nn.Linear(dim, output_dim)
         
         # Initialize output layer to zero for better training start
@@ -124,8 +130,8 @@ class RectifiedFlowMLP(nn.Module):
             x = layer(x, t_emb)
         
         # Output with time conditioning
-        # x = self.norm_output(x, t_emb)
-        x = self.norm_output(x)
+        x = self.norm_output(x, t_emb)
+        # x = self.norm_output(x)
         x = self.linear_output(x)
         
         return x

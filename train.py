@@ -122,7 +122,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_path", type=str,
                         default="/data/scratch/acw723/databases/medium/model_tc_29_best")
-    parser.add_argument("--batch_size", type=int, default=8192)
+    parser.add_argument("--batch_size", type=int, default=2048)
     parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--lr", type=float, default=1e-5)
     parser.add_argument("--time_embed_dim", type=int, default=32)
