@@ -69,11 +69,10 @@ class MLP(nn.Module):
 
     def forward(self, x, cond=None):
         inp = x
-        if cond is None:
-            x = self.norm(x)
-        else:
-            # Apply conditional normalization
+        if isinstance(self.norm, AdaptiveNorm):
             x = self.norm(x, cond)
+        else:
+            x = self.norm(x)
         x = self.ff(x)
         # # Apply layer scaling
         # x = x * self.layer_scale
