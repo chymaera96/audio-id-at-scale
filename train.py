@@ -84,7 +84,7 @@ class PLRectifiedFlow(pl.LightningModule):
             for t in t_vals:
                 t_batch = torch.full((num_samples,), t, device=self.device)
                 v = self(x_t, t_batch)
-                x_t = x_t + (1.0 / num_steps) * v  # Euler step
+                x_t = x_t - (1.0 / num_steps) * v  # Euler step
 
             x_gen = x_t
             # Sample real fingerprints
