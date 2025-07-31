@@ -59,17 +59,24 @@ class MLP(nn.Module):
     def __init__(self, dim, mlp_mult=4, cond_dim=None, dropout=0.):
         super(MLP, self).__init__()
         self.ff = Feedforward(dim=dim, mlp_mult=mlp_mult, dropout=dropout)
-        self.norm = AdaptiveNorm(dim, cond_dim)
+        if cond_dim is None:
+            self.norm = nn.LayerNorm(dim)
+        else:
+            self.norm = AdaptiveNorm(dim, cond_dim)
         
-        # Optional: layer scale for better training stability
-        self.layer_scale = nn.Parameter(torch.ones(dim) * 1e-6)
+        # # layer scale for better training stability
+        # self.layer_scale = nn.Parameter(torch.ones(dim) * 1e-6)
 
     def forward(self, x, cond=None):
         inp = x
-        x = self.norm(x, cond)
+        if cond is None:
+            x = self.norm(x)
+        else:
+            # Apply conditional normalization
+            x = self.norm(x, cond)
         x = self.ff(x)
-        # Apply layer scaling
-        x = x * self.layer_scale
+        # # Apply layer scaling
+        # x = x * self.layer_scale
         return x + inp
 
 
@@ -86,12 +93,15 @@ class RectifiedFlowMLP(nn.Module):
         
         # MLP layers with time conditioning only
         self.layers = nn.ModuleList([
-            MLP(dim, mlp_mult=mlp_mult, cond_dim=time_dim, dropout=dropout) 
-            for _ in range(num_layers)
+            MLP(dim, mlp_mult=mlp_mult, 
+                cond_dim=time_dim if i == 0 else None, 
+                dropout=dropout) 
+            for i in range(num_layers)
         ])
         
         # Output layers
-        self.norm_output = AdaptiveNorm(dim, cond_dim=time_dim)
+        # self.norm_output = AdaptiveNorm(dim, cond_dim=time_dim)
+        self.norm_output = nn.LayerNorm(dim)
         self.linear_output = nn.Linear(dim, output_dim)
         
         # Initialize output layer to zero for better training start
@@ -115,7 +125,8 @@ class RectifiedFlowMLP(nn.Module):
             x = layer(x, t_emb)
         
         # Output with time conditioning
-        x = self.norm_output(x, t_emb)
+        # x = self.norm_output(x, t_emb)
+        x = self.norm_output(x)
         x = self.linear_output(x)
         
         return x
