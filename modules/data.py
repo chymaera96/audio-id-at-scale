@@ -6,23 +6,32 @@ import pytorch_lightning as pl
 
 
 class FingerprintDataset(Dataset):
-    def __init__(self, path):
-        """
-        Args:
-            npy_path: Path to .npy file (fingerprints shape: [N, 128])
-        """
+    def __init__(self, path, num_stat_samples=10000):
         mm_path = os.path.join(path, 'dummy_db.mm')
-        assert os.path.exists(mm_path), f"File not found: {mm_path}"
-        self.shape = np.load(os.path.join(path, 'dummy_db_shape.npy'))
-        self.memmap = np.memmap(mm_path, dtype=np.float32, mode='r', shape=(self.shape[0], self.shape[1]))
-        assert self.memmap.shape[1] == 128, "Expected shape (N, 128)"
+        shape_path = os.path.join(path, 'dummy_db_shape.npy')
+
+        assert os.path.exists(mm_path), f"Missing file: {mm_path}"
+        assert os.path.exists(shape_path), f"Missing file: {shape_path}"
+
+        self.shape = np.load(shape_path)
+        self.memmap = np.memmap(mm_path, dtype=np.float32, mode='r', shape=tuple(self.shape))
+        assert self.memmap.shape[1] == 128, "Expected fingerprint dimension of 128"
+
+        # Estimate mean and std from a random subset
+        total = self.memmap.shape[0]
+        indices = np.random.choice(total, size=min(num_stat_samples, total), replace=False)
+        sample = np.array([self.memmap[i] for i in indices])  # shape: [N, 128]
+
+        self.mean = torch.from_numpy(sample.mean(axis=0)).float()
+        self.std = torch.from_numpy(sample.std(axis=0)).float() + 1e-8  # prevent division by zero
 
     def __len__(self):
         return self.memmap.shape[0]
 
     def __getitem__(self, idx):
-        fp = self.memmap[idx]  
-        return torch.from_numpy(fp.copy()).float()
+        fp = torch.from_numpy(self.memmap[idx].copy()).float()
+        return (fp - self.mean) / self.std
+
 
 
 class FingerprintDataModule(pl.LightningDataModule):

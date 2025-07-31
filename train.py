@@ -50,8 +50,10 @@ class PLRectifiedFlow(pl.LightningModule):
 
     def add_noise(self, x0, t):
         noise = torch.randn_like(x0)
-        xt = x0 + t[:, None] * noise
-        return xt, x0 - xt  
+        x1 = x0 + noise
+        xt = (1. - t[:, None]) * x0 + t[:, None] * x1
+        return xt, x1 - x0
+
 
     def forward(self, x_t, t):
         # cond = self.time_embed(t)
