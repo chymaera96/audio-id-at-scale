@@ -48,11 +48,9 @@ class PLRectifiedFlow(pl.LightningModule):
         self.real_fingerprints = real_fingerprints.to(self.device)
         # self.time_embed = SinusoidalTimeEmbedding(config.time_embed_dim)
 
-    def add_noise(self, x0, t):
-        noise = torch.randn_like(x0)
-        x1 = x0 + noise
-        xt = (1. - t[:, None]) * x0 + t[:, None] * x1
-        return xt, x1 - x0
+    def add_noise(self, x0, noise, t):
+        xt = (1. - t[:, None]) * x0 + t[:, None] * noise
+        return xt
 
 
     def forward(self, x_t, t):
@@ -63,7 +61,9 @@ class PLRectifiedFlow(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         x0 = batch
         t = torch.rand(x0.shape[0], device=x0.device)
-        x_t, v_target = self.add_noise(x0, t)
+        noise = torch.randn_like(x0)
+        v_target = x0 - noise
+        x_t = self.add_noise(x0, noise, t)
         v_pred = self(x_t, t)
         loss = self.loss_fn(v_pred, v_target)
         self.log("train/loss", loss)
@@ -126,7 +126,7 @@ if __name__ == "__main__":
                         default="/data/scratch/acw723/databases/medium/model_tc_29_best")
     parser.add_argument("--batch_size", type=int, default=2048)
     parser.add_argument("--epochs", type=int, default=100)
-    parser.add_argument("--lr", type=float, default=1e-5)
+    parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--time_embed_dim", type=int, default=32)
     parser.add_argument("--input_dim", type=int, default=128)
     parser.add_argument("--hidden_dim", type=int, default=768)

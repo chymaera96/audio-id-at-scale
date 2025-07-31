@@ -6,7 +6,7 @@ import pytorch_lightning as pl
 
 
 class FingerprintDataset(Dataset):
-    def __init__(self, path, num_stat_samples=10000):
+    def __init__(self, path, num_stat_samples=100000):
         mm_path = os.path.join(path, 'dummy_db.mm')
         shape_path = os.path.join(path, 'dummy_db_shape.npy')
 
