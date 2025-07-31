@@ -125,7 +125,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, default=2048)
     parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--lr", type=float, default=1e-4)
-    parser.add_argument("--time_embed_dim", type=int, default=256)
+    parser.add_argument("--time_embed_dim", type=int, default=32)
     parser.add_argument("--input_dim", type=int, default=128)
     parser.add_argument("--hidden_dim", type=int, default=768)
     parser.add_argument("--depth", type=int, default=12)
