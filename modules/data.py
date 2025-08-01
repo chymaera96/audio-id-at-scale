@@ -32,7 +32,8 @@ class FingerprintDataset(Dataset):
 
     def __getitem__(self, idx):
         fp = torch.from_numpy(self.memmap[idx].copy()).float()
-        return (fp - self.mean) / self.std
+        # return (fp - self.mean) / self.std
+        return fp
 
 
 
