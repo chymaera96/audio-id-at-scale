@@ -25,6 +25,8 @@ class FingerprintDataset(Dataset):
         self.mean = torch.from_numpy(sample.mean(axis=0)).float()
         self.std = torch.from_numpy(sample.std(axis=0)).float() + 1e-8  # prevent division by zero
 
+        print(f"Dataset statistics: mean={self.mean}, std={self.std}")
+
     def __len__(self):
         return self.memmap.shape[0]
 
