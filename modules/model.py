@@ -13,11 +13,29 @@ class SinusoidalTimeEmbedding(nn.Module):
         t: (batch,) in [0, 1]
         Returns: (batch, dim) sinusoidal embedding
         """
+        t = (t * 2.) - 1.  # Rescale to [-1, 1]
+
         half_dim = self.dim // 2
         emb_scale = math.log(10000) / (half_dim - 1)
         exponents = torch.exp(torch.arange(half_dim, device=t.device) * -emb_scale)
         angle_rates = t[:, None] * exponents[None, :]  # (B, half_dim)
         return torch.cat([torch.sin(angle_rates), torch.cos(angle_rates)], dim=-1)  # (B, dim)
+    
+class TimeEmbedding(nn.Module):
+    def __init__(self, input_dim, hidden_dim):
+        super().__init__()
+        self.embed = SinusoidalTimeEmbedding(input_dim)
+        self.proj = nn.Sequential(
+            nn.Linear(input_dim, hidden_dim),
+            nn.SiLU(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.SiLU(),
+            nn.Linear(hidden_dim, hidden_dim),
+        )
+
+    def forward(self, t):  # t: shape [batch]
+        raw = self.embed(t)  # shape: [batch, input_dim]
+        return self.proj(raw)
 
 
 class AdaptiveNorm(nn.Module):
@@ -85,7 +103,8 @@ class RectifiedFlowMLP(nn.Module):
         super().__init__()
         
         # Time embedding
-        self.time_embedding = SinusoidalTimeEmbedding(time_dim)
+        # self.time_embedding = SinusoidalTimeEmbedding(time_dim)
+        self.time_embedding = TimeEmbedding(input_dim=time_dim, hidden_dim=time_dim)
         
         # Input projection
         self.linear_input = nn.Linear(input_dim, dim)

@@ -69,6 +69,7 @@ class PLRectifiedFlow(pl.LightningModule):
         self.log("train/loss", loss)
         return loss
 
+
     def configure_optimizers(self):
         return torch.optim.AdamW(self.parameters(), lr=self.config.lr)
 
@@ -97,11 +98,24 @@ class PLRectifiedFlow(pl.LightningModule):
             fad = compute_frechet_distance(mu_real, sigma_real, mu_gen, sigma_gen)
             self.log("train/fad", fad)
 
+    # @torch.no_grad()
+    # def decode(self, denoising_steps=1, num_samples=1):
+    #     device = next(self.parameters()).device
+    #     step_size = 1./denoising_steps
+    #     output = torch.randn((num_samples, self.config.input_dim),  
+    #                          dtype=torch.float32, device=device)
+    #     times = 1.
+    #     for i in range(denoising_steps):
+    #         output = self(output, times=times, steps=step_size, return_x=True)
+    #         times = times - step_size
+    #     return output
+
 
 def train(config):
     dataset = FingerprintDataset(config.data_path)
     dataloader = DataLoader(dataset, batch_size=config.batch_size, shuffle=True, num_workers=4)
     all_data = torch.cat([x[None] for x in dataset], dim=0)
+    print(f"all_data shape: {all_data.shape}, dtype: {all_data.dtype}")
 
     model = PLRectifiedFlow(config, real_fingerprints=all_data)
 
