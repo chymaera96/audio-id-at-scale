@@ -99,7 +99,7 @@ class MLP(nn.Module):
 
 class RectifiedFlowMLP(nn.Module):
     def __init__(self, input_dim, output_dim, time_dim=256, dim=768, 
-                 num_layers=12, mlp_mult=4, dropout=0.0):
+                 num_layers=12, mlp_mult=4, dropout=0.2):
         super().__init__()
         
         # Time embedding
