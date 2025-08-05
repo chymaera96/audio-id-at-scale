@@ -94,6 +94,7 @@ class PLRectifiedFlow(pl.LightningModule):
             # Sample real fingerprints
             indices = torch.randint(0, self.real_fingerprints.shape[0], (num_samples,), device='cpu')
             x_real = self.real_fingerprints[indices]
+            # print(f"=> x_gen shape: {x_gen.shape}, x_real shape: {x_real.shape}")
 
             mu_gen, sigma_gen = x_gen.mean(0), torch.cov(x_gen.T)
             mu_real, sigma_real = x_real.mean(0), torch.cov(x_real.T)
@@ -117,7 +118,7 @@ class PLRectifiedFlow(pl.LightningModule):
 def train(config):
     dataset = FingerprintDataset(config.data_path)
     dataloader = DataLoader(dataset, batch_size=config.batch_size, shuffle=True, num_workers=4)
-    all_data = torch.cat([x[0][None] for x in dataset], dim=0)
+    all_data = torch.cat([x[None] for x in dataset], dim=0)
     print(f"=> all_data shape: {all_data.shape}, dtype: {all_data.dtype}")
 
     mean = all_data.mean()
