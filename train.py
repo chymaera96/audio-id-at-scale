@@ -125,7 +125,8 @@ def train(config):
     std = all_data.std() + 1e-8  # Prevent division by zero
     print(f"=> Dataset statistics: mean={mean}, std={std}")
 
-    model = PLRectifiedFlow(config, real_fingerprints=all_data, mean=mean, std=std)
+    # model = PLRectifiedFlow(config, real_fingerprints=all_data, mean=mean, std=std)
+    model = PLRectifiedFlow(config, real_fingerprints=all_data)
 
     wandb_logger = WandbLogger(project=config.project, id=config.id, config=config)
 
