@@ -18,23 +18,22 @@ class FingerprintDataset(Dataset):
         assert self.memmap.shape[1] == 128, "Expected fingerprint dimension of 128"
 
         # Estimate mean and std from a random subset
-        total = self.memmap.shape[0]
-        indices = np.random.choice(total, size=min(num_stat_samples, total), replace=False)
-        sample = np.array([self.memmap[i] for i in indices])  # shape: [N, 128]
+        # total = self.memmap.shape[0]
+        # indices = np.random.choice(total, size=min(num_stat_samples, total), replace=False)
+        # sample = np.array([self.memmap[i] for i in indices])  # shape: [N, 128]
 
-        self.mean = torch.from_numpy(sample.mean(axis=0)).float()
-        self.std = torch.from_numpy(sample.std(axis=0)).float() + 1e-8  # prevent division by zero
+        # self.mean = torch.from_numpy(sample.mean()).float()
+        # self.std = torch.from_numpy(sample.std()).float() + 1e-8  # prevent division by zero
 
-        print(f"Dataset statistics: mean={self.mean}, std={self.std}")
+        # print(f"Dataset statistics: mean={self.mean}, std={self.std}")
 
     def __len__(self):
         return self.memmap.shape[0]
 
     def __getitem__(self, idx):
         fp = torch.from_numpy(self.memmap[idx].copy()).float()
-        return (fp - self.mean) / self.std
-        # return fp
-
+        # return (fp - self.mean) / self.std
+        return fp
 
 
 class FingerprintDataModule(pl.LightningDataModule):

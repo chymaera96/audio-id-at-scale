@@ -32,7 +32,7 @@ def compute_frechet_distance(mu1, sigma1, mu2, sigma2):
 # Lightning Module
 # ----------------------------
 class PLRectifiedFlow(pl.LightningModule):
-    def __init__(self, config, real_fingerprints):
+    def __init__(self, config, real_fingerprints, mean=None, std=None):
         super().__init__()
         self.config = config
         self.save_hyperparameters(config)
@@ -46,6 +46,8 @@ class PLRectifiedFlow(pl.LightningModule):
         )
         self.loss_fn = nn.MSELoss()
         self.real_fingerprints = real_fingerprints.to(self.device)
+        self.mean = mean.to(self.device) if mean is not None else 0.0
+        self.std = std.to(self.device) if std is not None else 1.0
         # self.time_embed = SinusoidalTimeEmbedding(config.time_embed_dim)
 
     def add_noise(self, x0, noise, t):
@@ -60,6 +62,7 @@ class PLRectifiedFlow(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         x0 = batch
+        x0 = (x0 - self.mean) / self.std  # Normalize the input
         t = torch.rand(x0.shape[0], device=x0.device)
         noise = torch.randn_like(x0)
         v_target = x0 - noise
@@ -80,14 +83,14 @@ class PLRectifiedFlow(pl.LightningModule):
         self.model.eval()
         with torch.no_grad():
             x_t = torch.randn(num_samples, self.config.input_dim, device=self.device)
-            t_vals = torch.linspace(1.0, 0.0, steps=num_steps, device=self.device)
+            t_vals = torch.linspace(1.0, 1.0/num_steps, steps=num_steps, device=self.device)
 
             for t in t_vals:
                 t_batch = torch.full((num_samples,), t, device=self.device)
                 v = self(x_t, t_batch)
-                x_t = x_t - (1.0 / num_steps) * v  # Euler step
+                x_t = x_t + (1.0 / num_steps) * v  # Euler step
 
-            x_gen = x_t
+            x_gen = x_t * self.std + self.mean  # Rescale to original range
             # Sample real fingerprints
             indices = torch.randint(0, self.real_fingerprints.shape[0], (num_samples,), device='cpu')
             x_real = self.real_fingerprints[indices]
@@ -114,10 +117,14 @@ class PLRectifiedFlow(pl.LightningModule):
 def train(config):
     dataset = FingerprintDataset(config.data_path)
     dataloader = DataLoader(dataset, batch_size=config.batch_size, shuffle=True, num_workers=4)
-    all_data = torch.cat([x[None] for x in dataset], dim=0)
-    print(f"all_data shape: {all_data.shape}, dtype: {all_data.dtype}")
+    all_data = torch.cat([x[0][None] for x in dataset], dim=0)
+    print(f"=> all_data shape: {all_data.shape}, dtype: {all_data.dtype}")
 
-    model = PLRectifiedFlow(config, real_fingerprints=all_data)
+    mean = all_data.mean()
+    std = all_data.std() + 1e-8  # Prevent division by zero
+    print(f"=> Dataset statistics: mean={mean}, std={std}")
+
+    model = PLRectifiedFlow(config, real_fingerprints=all_data, mean=mean, std=std)
 
     wandb_logger = WandbLogger(project=config.project, id=config.id, config=config)
 
