@@ -6,7 +6,7 @@ import scipy
 import numpy as np
 from pytorch_lightning.loggers import WandbLogger
 
-from modules.model import RectifiedFlowMLP, SinusoidalTimeEmbedding
+from modules.model import RectifiedFlowMLP, VanillaMLP
 from modules.data import FingerprintDataset
 from torch.utils.data import DataLoader
 
@@ -37,13 +37,20 @@ class PLRectifiedFlow(pl.LightningModule):
         self.config = config
         self.save_hyperparameters(config)
 
-        self.model = RectifiedFlowMLP(
+        # self.model = RectifiedFlowMLP(
+        #     input_dim=config.input_dim,
+        #     output_dim=config.input_dim,
+        #     time_dim=config.time_embed_dim,
+        #     dim=config.hidden_dim,
+        #     num_layers=config.depth
+        # )
+        self.model = VanillaMLP(
             input_dim=config.input_dim,
-            output_dim=config.input_dim,
             time_dim=config.time_embed_dim,
-            dim=config.hidden_dim,
-            num_layers=config.depth
+            hidden_dim=config.hidden_dim,
+            depth=config.depth
         )
+
         self.loss_fn = nn.MSELoss()
         self.real_fingerprints = real_fingerprints.to(self.device)
         self.mean = mean.to(self.device) if mean is not None else 0.0
@@ -125,8 +132,8 @@ def train(config):
     std = all_data.std() + 1e-8  # Prevent division by zero
     print(f"=> Dataset statistics: mean={mean}, std={std}")
 
-    # model = PLRectifiedFlow(config, real_fingerprints=all_data, mean=mean, std=std)
-    model = PLRectifiedFlow(config, real_fingerprints=all_data)
+    model = PLRectifiedFlow(config, real_fingerprints=all_data, mean=mean, std=std)
+    # model = PLRectifiedFlow(config, real_fingerprints=all_data)
 
     wandb_logger = WandbLogger(project=config.project, id=config.id, config=config)
 
@@ -153,7 +160,7 @@ if __name__ == "__main__":
     parser.add_argument("--time_embed_dim", type=int, default=32)
     parser.add_argument("--input_dim", type=int, default=128)
     parser.add_argument("--hidden_dim", type=int, default=768)
-    parser.add_argument("--depth", type=int, default=4)
+    parser.add_argument("--depth", type=int, default=12)
     parser.add_argument("--project", type=str, default="audio-id-at-scale")
     parser.add_argument("--out_dir", type=str, default="checkpoints")
     parser.add_argument("--id", type=str, default=None)

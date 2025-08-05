@@ -156,3 +156,34 @@ class RectifiedFlowMLP(nn.Module):
         return x
 
 
+class VanillaMLP(nn.Module):
+    def __init__(self, input_dim=128, time_dim=32, hidden_dim=512, depth=5):
+        """
+        Args:
+            input_dim: Dimensionality of the fingerprint vector
+            time_embed_dim: Dimensionality of time embedding
+            hidden_dim: Width of each hidden layer
+            depth: Number of hidden layers
+        """
+        super().__init__()
+        self.time_embedding = TimeEmbedding(input_dim=time_dim, hidden_dim=time_dim)
+
+        layers = []
+        in_dim = input_dim + time_dim
+
+        for i in range(depth):
+            layers.append(nn.Linear(in_dim if i == 0 else hidden_dim, hidden_dim))
+            layers.append(nn.SiLU())
+
+        layers.append(nn.Linear(hidden_dim, input_dim))  # Final layer: predict velocity
+
+        self.net = nn.Sequential(*layers)
+
+    def forward(self, x, t):
+        """
+        x: (batch, input_dim) → noisy fingerprint
+        t: (batch,) → timestep in [0, 1]
+        """
+        t_embed = self.time_embed(t)  # (batch, time_embed_dim)
+        x_input = torch.cat([x, t_embed], dim=-1)
+        return self.net(x_input)
