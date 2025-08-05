@@ -153,7 +153,7 @@ if __name__ == "__main__":
     parser.add_argument("--time_embed_dim", type=int, default=32)
     parser.add_argument("--input_dim", type=int, default=128)
     parser.add_argument("--hidden_dim", type=int, default=768)
-    parser.add_argument("--depth", type=int, default=12)
+    parser.add_argument("--depth", type=int, default=4)
     parser.add_argument("--project", type=str, default="audio-id-at-scale")
     parser.add_argument("--out_dir", type=str, default="checkpoints")
     parser.add_argument("--id", type=str, default=None)
