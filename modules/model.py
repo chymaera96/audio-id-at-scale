@@ -166,7 +166,7 @@ class VanillaMLP(nn.Module):
             depth: Number of hidden layers
         """
         super().__init__()
-        self.time_embedding = TimeEmbedding(input_dim=time_dim, hidden_dim=time_dim)
+        self.time_embed = TimeEmbedding(input_dim=time_dim, hidden_dim=time_dim)
 
         layers = []
         in_dim = input_dim + time_dim
