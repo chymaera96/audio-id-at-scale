@@ -162,7 +162,8 @@ def train(config):
         precision=32,
     )
 
-    trainer.fit(model, train_dataloaders=dataloader)
+    # trainer.fit(model, train_dataloaders=dataloader)
+    trainer.validate(model, dataloaders=dataloader)
 
 
 if __name__ == "__main__":
