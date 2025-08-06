@@ -117,7 +117,7 @@ class PLRectifiedFlow(pl.LightningModule):
             # x_gen_np = x_gen.cpu().numpy()
             prdc_metrics = prdc(
                 reference=x_real,
-                candidate=x_gen,
+                candidate=x_gen.detach().cpu(),
                 nearest_k=5
             )
             for key, value in prdc_metrics.items():
