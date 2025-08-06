@@ -5,11 +5,12 @@ import argparse
 import scipy
 import numpy as np
 from pytorch_lightning.loggers import WandbLogger
+from torch.utils.data import DataLoader
+
 
 from modules.model import RectifiedFlowMLP, VanillaMLP
 from modules.data import FingerprintDataset
-from torch.utils.data import DataLoader
-
+from metrics.prdc import compute_prdc
 
 # ----------------------------
 # Fréchet Distance Calculation
@@ -28,6 +29,7 @@ def compute_frechet_distance(mu1, sigma1, mu2, sigma2):
     return float(fid)
 
 
+
 # ----------------------------
 # Lightning Module
 # ----------------------------
@@ -37,19 +39,19 @@ class PLRectifiedFlow(pl.LightningModule):
         self.config = config
         self.save_hyperparameters(config)
 
-        # self.model = RectifiedFlowMLP(
-        #     input_dim=config.input_dim,
-        #     output_dim=config.input_dim,
-        #     time_dim=config.time_embed_dim,
-        #     dim=config.hidden_dim,
-        #     num_layers=config.depth
-        # )
-        self.model = VanillaMLP(
+        self.model = RectifiedFlowMLP(
             input_dim=config.input_dim,
+            output_dim=config.input_dim,
             time_dim=config.time_embed_dim,
-            hidden_dim=config.hidden_dim,
-            depth=config.depth
+            dim=config.hidden_dim,
+            num_layers=config.depth
         )
+        # self.model = VanillaMLP(
+        #     input_dim=config.input_dim,
+        #     time_dim=config.time_embed_dim,
+        #     hidden_dim=config.hidden_dim,
+        #     depth=config.depth
+        # )
 
         self.loss_fn = nn.MSELoss()
         self.real_fingerprints = real_fingerprints.to(self.device)
@@ -70,7 +72,8 @@ class PLRectifiedFlow(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         x0 = batch
         x0 = (x0 - self.mean) / self.std  # Normalize the input
-        t = torch.rand(x0.shape[0], device=x0.device)
+        # t = torch.rand(x0.shape[0], device=x0.device)
+        t = torch.sigmoid(torch.randn(x0.shape[0], device=x0.device)) 
         noise = torch.randn_like(x0)
         v_target = x0 - noise
         x_t = self.add_noise(x0, noise, t)
@@ -84,9 +87,9 @@ class PLRectifiedFlow(pl.LightningModule):
         return torch.optim.AdamW(self.parameters(), lr=self.config.lr)
 
     def on_train_epoch_end(self):
-        self.compute_fad()
+        self.compute_metrics()
 
-    def compute_fad(self, num_samples=10000, num_steps=32):
+    def compute_metrics(self, num_samples=10000, num_steps=32):
         self.model.eval()
         with torch.no_grad():
             x_t = torch.randn(num_samples, self.config.input_dim, device=self.device)
@@ -108,6 +111,19 @@ class PLRectifiedFlow(pl.LightningModule):
 
             fad = compute_frechet_distance(mu_real, sigma_real, mu_gen, sigma_gen)
             self.log("train/fad", fad)
+
+    def compute_prdc_metrics(self, real, fake, k=5):
+        real_np = real.cpu().numpy()
+        fake_np = fake.cpu().numpy()
+
+        metrics = compute_prdc(
+            real_features=real_np,
+            fake_features=fake_np,
+            nearest_k=k
+        )
+        for key, value in metrics.items():
+            self.log(f"train/prdc_{key}", value)
+
 
     # @torch.no_grad()
     # def decode(self, denoising_steps=1, num_samples=1):
