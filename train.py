@@ -112,6 +112,9 @@ class PLRectifiedFlow(pl.LightningModule):
             fad = compute_frechet_distance(mu_real, sigma_real, mu_gen, sigma_gen)
             self.log("train/fad", fad)
 
+            # Compute PRDC metrics
+            self.compute_prdc_metrics(x_real, x_gen, k=5)
+
     def compute_prdc_metrics(self, real, fake, k=5):
         real_np = real.cpu().numpy()
         fake_np = fake.cpu().numpy()
