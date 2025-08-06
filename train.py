@@ -113,11 +113,11 @@ class PLRectifiedFlow(pl.LightningModule):
             self.log("train/fad", fad)
 
             # Compute PRDC metrics
-            x_real_np = x_real.cpu().numpy()
-            x_gen_np = x_gen.cpu().numpy()
+            # x_real_np = x_real.cpu().numpy()
+            # x_gen_np = x_gen.cpu().numpy()
             prdc_metrics = prdc(
-                reference=x_real_np,
-                candidate=x_gen_np,
+                reference=x_real,
+                candidate=x_gen,
                 nearest_k=5
             )
             for key, value in prdc_metrics.items():
