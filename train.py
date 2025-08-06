@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 
 from modules.model import RectifiedFlowMLP, VanillaMLP
 from modules.data import FingerprintDataset
-from metrics.prdc import compute_prdc
+from metrics.prdc import prdc
 
 # ----------------------------
 # Fréchet Distance Calculation
@@ -113,19 +113,15 @@ class PLRectifiedFlow(pl.LightningModule):
             self.log("train/fad", fad)
 
             # Compute PRDC metrics
-            self.compute_prdc_metrics(x_real, x_gen, k=5)
-
-    def compute_prdc_metrics(self, real, fake, k=5):
-        real_np = real.cpu().numpy()
-        fake_np = fake.cpu().numpy()
-
-        metrics = compute_prdc(
-            real_features=real_np,
-            fake_features=fake_np,
-            nearest_k=k
-        )
-        for key, value in metrics.items():
-            self.log(f"train/prdc_{key}", value)
+            x_real_np = x_real.cpu().numpy()
+            x_gen_np = x_gen.cpu().numpy()
+            prdc_metrics = prdc(
+                reference=x_real_np,
+                candidate=x_gen_np,
+                nearest_k=5
+            )
+            for key, value in prdc_metrics.items():
+                self.log(f"train/prdc_{key}", value)
 
 
     # @torch.no_grad()
