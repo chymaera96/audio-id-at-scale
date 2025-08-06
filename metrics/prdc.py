@@ -28,10 +28,10 @@ def prdc(reference, candidate, nearest_k):
     """
 
     # print("Num real: {} Num fake: {}".format(reference.shape[0], candidate.shape[0]))
-    ref_nn_radii = reference.get_radii(nearest_k)
-    cand_nn_radii = candidate.get_radii(nearest_k)
+    ref_nn_radii = nearest_neighbour_distances(reference, nearest_k)
+    cand_nn_radii = nearest_neighbour_distances(candidate, nearest_k)
 
-    distance_ref_cand = torch.cdist(reference.embeddings, candidate.embeddings)
+    distance_ref_cand = torch.cdist(reference, candidate)
 
     precision = (
         (distance_ref_cand < ref_nn_radii[:, None]).any(dim=0).double().mean().item()
