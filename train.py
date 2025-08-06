@@ -86,7 +86,10 @@ class PLRectifiedFlow(pl.LightningModule):
     def configure_optimizers(self):
         return torch.optim.AdamW(self.parameters(), lr=self.config.lr)
 
-    def on_train_epoch_end(self):
+    # def on_train_epoch_end(self):
+    #     self.compute_metrics()
+
+    def validation_step(self, batch, batch_idx):
         self.compute_metrics()
 
     def compute_metrics(self, num_samples=10000, num_steps=32):
