@@ -72,8 +72,8 @@ class PLRectifiedFlow(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         x0 = batch
         x0 = (x0 - self.mean) / self.std  # Normalize the input
-        # t = torch.rand(x0.shape[0], device=x0.device)
-        t = torch.sigmoid(torch.randn(x0.shape[0], device=x0.device)) 
+        t = torch.rand(x0.shape[0], device=x0.device)
+        # t = torch.sigmoid(torch.randn(x0.shape[0], device=x0.device)) 
         noise = torch.randn_like(x0)
         v_target = x0 - noise
         x_t = self.add_noise(x0, noise, t)
@@ -175,7 +175,7 @@ if __name__ == "__main__":
                         default="/data/scratch/acw723/databases/medium/model_tc_29_best")
     parser.add_argument("--batch_size", type=int, default=2048)
     parser.add_argument("--epochs", type=int, default=100)
-    parser.add_argument("--lr", type=float, default=1e-4)
+    parser.add_argument("--lr", type=float, default=5e-5)
     parser.add_argument("--time_embed_dim", type=int, default=32)
     parser.add_argument("--input_dim", type=int, default=128)
     parser.add_argument("--hidden_dim", type=int, default=768)
