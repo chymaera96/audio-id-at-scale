@@ -60,7 +60,6 @@ def sample_embeddings(
     mean: float = 0.0,
     std: float = 1.0,
     batch_size: int = 8192,
-    use_autocast: bool = False,
 ):
     """
     Euler sampler matching the training-time metric computation:
@@ -130,7 +129,6 @@ def main():
         mean=mean,
         std=std,
         batch_size=args.batch_size,
-        use_autocast=args.use_autocast,
     )
 
     # Save
