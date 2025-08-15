@@ -142,7 +142,12 @@ def main():
         # Save as memory-mapped .mm file
         shape = (synth.shape[0], synth.shape[1])
         mm_path = out_path.with_suffix(".mm")
-        np.memmap(mm_path, dtype='float32', mode='w+', shape=shape)[:] = synth.numpy()
+        synth_db = np.memmap(mm_path, dtype='float32', mode='w+', shape=shape)
+        synth_db[:] = synth.numpy()[:]
+        synth_db.flush(); del synth_db
+        
+        out_dir = out_path.parent
+        np.save(f"{out_dir}/dummy_db_shape.npy", shape)
         print(f"[done] wrote {synth.shape[0]} x {synth.shape[1]} fingerprints -> {mm_path}")
     else:
         # default to .npy if user gave weird extension
