@@ -6,7 +6,7 @@ import scipy
 import numpy as np
 from pytorch_lightning.loggers import WandbLogger
 from torch.utils.data import DataLoader
-
+from pytorch_lightning.callbacks import ModelCheckpoint
 
 from modules.model import RectifiedFlowMLP, VanillaMLP
 from modules.data import FingerprintDataset
@@ -113,7 +113,7 @@ class PLRectifiedFlow(pl.LightningModule):
             mu_real, sigma_real = x_real.mean(0), torch.cov(x_real.T)
 
             fad = compute_frechet_distance(mu_real, sigma_real, mu_gen, sigma_gen)
-            self.log("train/fad", fad)
+            self.log("train/fad", fad, prog_bar=True, on_step=False, on_epoch=True, sync_dist=True)
 
             # Compute PRDC metrics
             # x_real_np = x_real.cpu().numpy()
@@ -155,6 +155,32 @@ def train(config):
 
     wandb_logger = WandbLogger(project=config.project, id=config.id, config=config)
 
+    wandb_logger = WandbLogger(project=config.project, id=config.id, config=config)
+
+    # --- checkpoints ---
+    best_dir = f"{config.out_dir}/best"
+    periodic_dir = f"{config.out_dir}/epochs"
+
+    # top-3 by lowest train/fad
+    ckpt_best = ModelCheckpoint(
+        dirpath=best_dir,
+        filename="{epoch:03d}",
+        monitor="train/fad",
+        mode="min",
+        save_top_k=3,
+        save_last=False,
+        auto_insert_metric_name=False,  # don't append metric name/value
+    )
+
+    # save every 10 epochs, keep them all
+    ckpt_every_10 = ModelCheckpoint(
+        dirpath=periodic_dir,
+        filename="{epoch:03d}",
+        every_n_epochs=10,
+        save_top_k=-1,          # save all matching checkpoints
+        save_last=False,
+    )
+
     trainer = pl.Trainer(
         max_epochs=config.epochs,
         logger=wandb_logger,
@@ -163,6 +189,7 @@ def train(config):
         accelerator="auto",
         devices="auto",
         precision=32,
+        callbacks=[ckpt_best, ckpt_every_10],
     )
 
     trainer.fit(model, train_dataloaders=dataloader)

@@ -156,8 +156,6 @@ def main():
         print(f"[Warning] Unknown extension for --out; saved as {fallback.name} instead.")
         out_path = fallback
 
-    print(f"[done] wrote {synth.shape[0]} x {synth.shape[1]} fingerprints -> {out_path}")
-
 
 if __name__ == "__main__":
     main()
