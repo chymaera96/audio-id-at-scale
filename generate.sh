@@ -14,10 +14,10 @@ for NUM_SAMPLES in "$@"; do
 
   STR="${VAL}${SUFFIX}"
   OUT_CUR="${OUT_PATH//100K/${STR}}"
-#   mkdir -p "$(dirname "$OUT_CUR")"
+  mkdir -p "$(dirname "$OUT_CUR")"
 
   echo "Output path..."
   echo "$OUT_CUR"
 
-#   python generate.py --checkpoint="$CHECKPOINT" --num_samples="$NUM_SAMPLES" --out="$OUT_CUR"
+  python generate.py --checkpoint="$CHECKPOINT" --num_samples="$NUM_SAMPLES" --out="$OUT_CUR"
 done
