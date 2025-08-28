@@ -10,7 +10,7 @@ for NUM_SAMPLES in "$@"; do
 #   mkdir -p "$(dirname "$OUT_CUR")"
 
   echo "Output path..."
-  echo $CHECKPOINT
+  echo $OUT_CUR
 
 
 #   python generate.py --checkpoint="$CHECKPOINT" --num_samples="$NUM_SAMPLES" --out="$OUT_CUR"
