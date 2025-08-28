@@ -7,11 +7,11 @@ for NUM_SAMPLES in "$@"; do
   KVAL=$(( NUM_SAMPLES / 1000 ))
   KSTR="${KVAL}K"
   OUT_CUR="${OUT_PATH//100K/${KSTR}}"
-  mkdir -p "$(dirname "$OUT_CUR")"
+#   mkdir -p "$(dirname "$OUT_CUR")"
 
   echo "Output path..."
   echo $CHECKPOINT
 
 
 #   python generate.py --checkpoint="$CHECKPOINT" --num_samples="$NUM_SAMPLES" --out="$OUT_CUR"
-# done
+done
