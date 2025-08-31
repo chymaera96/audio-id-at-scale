@@ -76,14 +76,15 @@ def main():
 
     # Create dummy_db if not provided
     dummy_dir = args.dummy_dir
+
+    # Load db shape to decide number of dummy samples
+    db_shape = np.load(os.path.join(fp_dir, "db_shape.npy"))
+    n_db = int(db_shape[0])
+    num_dummy = args.num_dummy if args.num_dummy is not None else max(5 * n_db, 100_000)
+    
     if dummy_dir is None:
         if args.checkpoint is None:
             raise ValueError("--checkpoint is required when --dummy_dir is not provided")
-
-        # Load db shape to decide number of dummy samples
-        db_shape = np.load(os.path.join(fp_dir, "db_shape.npy"))
-        n_db = int(db_shape[0])
-        num_dummy = args.num_dummy if args.num_dummy is not None else max(5 * n_db, 100_000)
 
         device = args.device
         print(f"[dummy] Loading checkpoint on {device}...")
@@ -109,6 +110,7 @@ def main():
     top1 = eval_faiss(
         emb_dir=fp_dir,
         emb_dummy_dir=dummy_dir,
+        num_dummy=num_dummy,
         index_type=args.index_type,
         nogpu=args.nogpu,
         k_probe=args.k_probe,

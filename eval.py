@@ -143,6 +143,7 @@ def load_memmap_data(source_dir,
 
 def eval_faiss(emb_dir,
                emb_dummy_dir=None,
+               num_dummy=None,
                index_type='ivfpq',
                nogpu=False,
                max_train=1e7,
@@ -168,6 +169,11 @@ def eval_faiss(emb_dir,
     else:
         print(f'Using \x1b[93m{emb_dummy_dir}\x1b[0m as dummy embedding directory...')
     dummy_db, dummy_db_shape = load_memmap_data(emb_dummy_dir, 'dummy_db')
+
+    if num_dummy is not None and num_dummy < dummy_db_shape[0]:
+        dummy_db = dummy_db[:num_dummy, :]
+        dummy_db_shape[0] = num_dummy
+        print(f'Using only {num_dummy} items from dummy_db.')
 
     # Create and train FAISS index
     index = get_index(index_type, dummy_db, dummy_db.shape, (not nogpu),
