@@ -80,8 +80,8 @@ def main():
     # Load db shape to decide number of dummy samples
     db_shape = np.load(os.path.join(fp_dir, "db_shape.npy"))
     n_db = int(db_shape[0])
-    num_dummy = args.num_dummy if args.num_dummy is not None else max(5 * n_db, 100_000)
-    
+    num_dummy = args.num_dummy
+
     if dummy_dir is None:
         if args.checkpoint is None:
             raise ValueError("--checkpoint is required when --dummy_dir is not provided")
@@ -90,6 +90,7 @@ def main():
         print(f"[dummy] Loading checkpoint on {device}...")
         model, input_dim = build_model_from_checkpoint(args.checkpoint, device=device)
 
+        num_dummy = num_dummy if num_dummy is not None else max(5 * n_db, 100000)
         print(f"[dummy] Generating {num_dummy} synthetic embeddings (dim={input_dim})...")
         synth = sample_embeddings(
             model=model,
