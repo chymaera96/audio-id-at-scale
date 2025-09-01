@@ -164,7 +164,7 @@ def train(config):
     # top-3 by lowest train/fad
     ckpt_best = ModelCheckpoint(
         dirpath=best_dir,
-        filename="{epoch:03d}",
+        filename=f"{config.id}" + "-{epoch:03d}",
         monitor="train/fad",
         mode="min",
         save_top_k=3,
@@ -175,7 +175,7 @@ def train(config):
     # save every 10 epochs, keep them all
     ckpt_every_10 = ModelCheckpoint(
         dirpath=periodic_dir,
-        filename="{epoch:03d}",
+        filename=f"{config.id}" + "-{epoch:03d}",
         every_n_epochs=10,
         save_top_k=-1,          # save all matching checkpoints
         save_last=False,
