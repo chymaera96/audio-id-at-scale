@@ -57,6 +57,8 @@ def main():
     parser.add_argument("--std", type=float, default=0.088367)
     parser.add_argument("--device", type=str,
                         default="cuda" if torch.cuda.is_available() else "cpu")
+    parser.add_argument("--iterations", type=int, default=1,
+                        help="Number of evaluation iterations to run")
 
     # Evaluation params
     parser.add_argument("--index_type", default="ivfpq",
@@ -82,45 +84,52 @@ def main():
     n_db = int(db_shape[0])
     num_dummy = args.num_dummy
 
-    if dummy_dir is None:
-        if args.checkpoint is None:
-            raise ValueError("--checkpoint is required when --dummy_dir is not provided")
+    scores = []
+    for _ in range(args.iterations):
 
-        device = args.device
-        print(f"[dummy] Loading checkpoint on {device}...")
-        model, input_dim = build_model_from_checkpoint(args.checkpoint, device=device)
+        if dummy_dir is None:
+            if args.checkpoint is None:
+                raise ValueError("--checkpoint is required when --dummy_dir is not provided")
 
-        num_dummy = num_dummy if num_dummy is not None else max(5 * n_db, 100000)
-        print(f"[dummy] Generating {num_dummy} synthetic embeddings (dim={input_dim})...")
-        synth = sample_embeddings(
-            model=model,
-            input_dim=input_dim,
-            num_samples=num_dummy,
-            num_steps=args.num_steps,
-            device=device,
-            mean=float(args.mean),
-            std=float(args.std),
-            batch_size=args.batch_size,
+            device = args.device
+            print(f"[dummy] Loading checkpoint on {device}...")
+            model, input_dim = build_model_from_checkpoint(args.checkpoint, device=device)
+
+            num_dummy = num_dummy if num_dummy is not None else max(5 * n_db, 100000)
+            print(f"[dummy] Generating {num_dummy} synthetic embeddings (dim={input_dim})...")
+            synth = sample_embeddings(
+                model=model,
+                input_dim=input_dim,
+                num_samples=num_dummy,
+                num_steps=args.num_steps,
+                device=device,
+                mean=float(args.mean),
+                std=float(args.std),
+                batch_size=args.batch_size,
+            )
+
+            mm_path, shape = write_dummy_mm(fp_dir, synth)
+            print(f"[dummy] Wrote {shape[0]}x{shape[1]} synthetic embeddings -> {mm_path}")
+            dummy_dir = fp_dir
+
+        # Run evaluation
+        top1 = eval_faiss(
+            emb_dir=fp_dir,
+            emb_dummy_dir=dummy_dir,
+            num_dummy=num_dummy,
+            index_type=args.index_type,
+            nogpu=args.nogpu,
+            k_probe=args.k_probe,
+            n_centroids=args.n_centroids,
+            test_ids=args.test_ids,
         )
 
-        mm_path, shape = write_dummy_mm(fp_dir, synth)
-        print(f"[dummy] Wrote {shape[0]}x{shape[1]} synthetic embeddings -> {mm_path}")
-        dummy_dir = fp_dir
+        scores.append(top1)
 
-    # Run evaluation
-    top1 = eval_faiss(
-        emb_dir=fp_dir,
-        emb_dummy_dir=dummy_dir,
-        num_dummy=num_dummy,
-        index_type=args.index_type,
-        nogpu=args.nogpu,
-        k_probe=args.k_probe,
-        n_centroids=args.n_centroids,
-        test_ids=args.test_ids,
-    )
+    mean_score = np.mean(scores)
+    std_score = np.std(scores)
 
-    print(f"Top-1 exact hit rate (1s) = {top1:.2f}%")
-
+    print(f"\nFinal Top-1 Hit Rate: {mean_score*100:.2f}% ± {std_score*100:.2f}% over {args.iterations} runs")
 
 if __name__ == "__main__":
     main()

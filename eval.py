@@ -171,7 +171,8 @@ def eval_faiss(emb_dir,
     dummy_db, dummy_db_shape = load_memmap_data(emb_dummy_dir, 'dummy_db')
 
     if num_dummy is not None and num_dummy < dummy_db_shape[0]:
-        dummy_db = dummy_db[:num_dummy, :]
+        indices = np.random.choice(dummy_db_shape[0], size=num_dummy, replace=False)
+        dummy_db = dummy_db[indices, :]  # Select the random subset
         dummy_db_shape[0] = num_dummy
         print(f'Using only {num_dummy} items from dummy_db.')
 
