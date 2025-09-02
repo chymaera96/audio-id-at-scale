@@ -103,8 +103,8 @@ def main():
                         help="Device: 'cuda' or 'cpu'")
     parser.add_argument("--stats_from", type=str, default=None,
                         help="Optional path to real-fingerprint file (.npy or .pt) to compute mean/std for de-normalization")
-    parser.add_argument("--mean", type=float, default=0.000175, help="Override mean for de-normalization")
-    parser.add_argument("--std", type=float, default=0.088367, help="Override std for de-normalization")
+    parser.add_argument("--mean", type=float, default=-0.000266, help="Override mean for de-normalization")
+    parser.add_argument("--std", type=float, default=0.088268, help="Override std for de-normalization")
     parser.add_argument("--out", type=str, default="dummy_db.mm",
                         help="Output file (.npy or .pt). Extension decides format.")
     args = parser.parse_args()
