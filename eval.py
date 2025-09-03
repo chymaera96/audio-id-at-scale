@@ -187,15 +187,14 @@ def eval_faiss(emb_dir,
     t = time.time() - start_time
     print(f'Added total {index.ntotal} items to DB. {t:>4.2f} sec.')
 
-    # Prepare fake reconstruction index (dummy + db)
-    del dummy_db
-    start_time = time.time()
-    fake_recon_index, index_shape = load_memmap_data(
-        emb_dummy_dir, 'dummy_db', append_extra_length=query_shape[0],
-        display=False)
-    fake_recon_index[dummy_db_shape[0]:dummy_db_shape[0] + query_shape[0], :] = db[:, :]
-    fake_recon_index.flush()
-    print(f'Created fake_recon_index, total {index_shape[0]} items. {time.time() - start_time:>4.2f} sec.')
+    # Build in-memory reconstruction matrix that matches add() order: [dummy subset; db]
+    total = dummy_db.shape[0] + db.shape[0]
+    d = db.shape[1]
+    fake_recon_index = np.empty((total, d), dtype=np.float32)
+    fake_recon_index[:dummy_db.shape[0], :] = dummy_db
+    fake_recon_index[dummy_db.shape[0]:, :] = db
+    del dummy_db  # free the subset view
+    print(f'Created fake_recon_index, total {total} items. {time.time() - start_time:>4.2f} sec.')
 
     # Get test_ids
     print(f'test_id: \x1b[93m{test_ids}\x1b[0m,  ', end='')
