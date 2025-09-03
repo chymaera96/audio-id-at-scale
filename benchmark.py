@@ -2,6 +2,7 @@ import os
 import argparse
 import numpy as np
 import torch
+from tqdm import tqdm
 
 from eval import eval_faiss
 from generate import build_model_from_checkpoint, sample_embeddings
@@ -85,7 +86,8 @@ def main():
     num_dummy = args.num_dummy
 
     scores = []
-    for _ in range(args.iterations):
+
+    for _ in tqdm(range(args.iterations), desc="Benchmarking iterations"):
 
         if dummy_dir is None:
             if args.checkpoint is None:
@@ -122,6 +124,7 @@ def main():
             k_probe=args.k_probe,
             n_centroids=args.n_centroids,
             test_ids=args.test_ids,
+            verbose=False
         )
 
         scores.append(top1)
