@@ -150,7 +150,9 @@ def eval_faiss(emb_dir,
                test_ids='icassp',
                test_seq_len='1',
                k_probe=20,
-               n_centroids=64):
+               n_centroids=64,
+               verbose=True
+               ):
     """
     Segment/sequence-wise audio search experiment and evaluation: FAISS-based.
     Simplified for this project to compute ONLY top-1 exact hit rate at a
@@ -167,14 +169,18 @@ def eval_faiss(emb_dir,
     if emb_dummy_dir is None:
         emb_dummy_dir = emb_dir
     else:
-        print(f'Using \x1b[93m{emb_dummy_dir}\x1b[0m as dummy embedding directory...')
+        if verbose:
+            print(f'Using \x1b[93m{emb_dummy_dir}\x1b[0m as dummy embedding directory...')
+        else:
+            pass
     dummy_db, dummy_db_shape = load_memmap_data(emb_dummy_dir, 'dummy_db')
 
     if num_dummy is not None and num_dummy < dummy_db_shape[0]:
         indices = np.random.choice(dummy_db_shape[0], size=num_dummy, replace=False)
         dummy_db = dummy_db[indices, :]  # Select the random subset
         dummy_db_shape[0] = num_dummy
-        print(f'Using only {num_dummy} items from dummy_db.')
+        if verbose:
+            print(f'Using only {num_dummy} items from dummy_db.')
 
     # Create and train FAISS index
     index = get_index(index_type, dummy_db, dummy_db.shape, (not nogpu),
@@ -182,10 +188,15 @@ def eval_faiss(emb_dir,
 
     # Add items to index
     start_time = time.time()
-    index.add(dummy_db); print(f'{len(dummy_db)} items from dummy DB')
-    index.add(db); print(f'{len(db)} items from reference DB')
+    index.add(dummy_db) 
+    if verbose:
+        print(f'{len(dummy_db)} items from dummy DB')
+    index.add(db)
+    if verbose:
+        print(f'{len(db)} items from reference DB')
     t = time.time() - start_time
-    print(f'Added total {index.ntotal} items to DB. {t:>4.2f} sec.')
+    if verbose:
+        print(f'Added total {index.ntotal} items to DB. {t:>4.2f} sec.')
 
     # Build in-memory reconstruction matrix that matches add() order: [dummy subset; db]
     total = dummy_db.shape[0] + db.shape[0]
@@ -194,10 +205,12 @@ def eval_faiss(emb_dir,
     fake_recon_index[:dummy_db.shape[0], :] = dummy_db
     fake_recon_index[dummy_db.shape[0]:, :] = db
     del dummy_db  # free the subset view
-    print(f'Created fake_recon_index, total {total} items. {time.time() - start_time:>4.2f} sec.')
+    if verbose:
+        print(f'Created fake_recon_index, total {total} items. {time.time() - start_time:>4.2f} sec.')
 
     # Get test_ids
-    print(f'test_id: \x1b[93m{test_ids}\x1b[0m,  ', end='')
+    if verbose:
+        print(f'test_id: \x1b[93m{test_ids}\x1b[0m,  ', end='')
     if isinstance(test_ids, str) and test_ids.lower() == 'all':
         test_ids = np.arange(0, len(query) - 1, 1)
     elif isinstance(test_ids, str) and test_ids.isnumeric():
@@ -210,7 +223,8 @@ def eval_faiss(emb_dir,
 
     n_test = len(test_ids)
     gt_ids  = test_ids + dummy_db_shape[0]
-    print(f'n_test: \x1b[93m{n_test:n}\x1b[0m')
+    if verbose:
+        print(f'n_test: \x1b[93m{n_test:n}\x1b[0m')
 
     # Metric buffers (n_test, 1)
     top1_exact = np.zeros((n_test, 1), dtype=int)
@@ -248,7 +262,8 @@ def eval_faiss(emb_dir,
     np.save(f'{result_dir}/top1_exact_rate.npy', np.array([top1_exact_rate], dtype=np.float32))
     np.save(f'{result_dir}/raw_top1.npy', top1_exact)
     np.save(f'{emb_dir}/test_ids.npy', test_ids)
-    print(f'Saved test_ids, top1_exact_rate and raw_top1 to {result_dir}.')
+    if verbose:
+        print(f'Saved test_ids, top1_exact_rate and raw_top1 to {result_dir}.')
 
     return top1_exact_rate
 
