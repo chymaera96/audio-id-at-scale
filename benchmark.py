@@ -115,7 +115,7 @@ def main():
             dummy_dir = fp_dir
 
         # Run evaluation
-        top1 = eval_faiss(
+        hit_rates = eval_faiss(
             emb_dir=fp_dir,
             emb_dummy_dir=dummy_dir,
             # num_dummy=num_dummy,
@@ -129,11 +129,15 @@ def main():
 
         scores.append(top1)
 
-    print(f"[DEBUG] All Top-1 scores: {scores}")
+    # print(f"[DEBUG] All Top-1 scores: {scores}")
     mean_score = np.mean(scores)
     std_score = np.std(scores)
 
-    print(f"\nFinal Top-1 Hit Rate: {mean_score:.2f}% ± {std_score:.2f}% over {args.iterations} runs")
+    # print(f"\nFinal Top-1 Hit Rate: {mean_score:.2f}% ± {std_score:.2f}% over {args.iterations} runs")
+    print("-------Test hit-rates-------")
+    # Create table
+    print(f'Top-1 exact hit rate = {hit_rates[0]}')
+    print(f'Top-1 near hit rate = {hit_rates[1]}')
 
 if __name__ == "__main__":
     main()
