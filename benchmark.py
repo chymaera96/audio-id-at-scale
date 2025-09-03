@@ -126,10 +126,11 @@ def main():
 
         scores.append(top1)
 
+    print(f"[DEBUG] All Top-1 scores: {scores}")
     mean_score = np.mean(scores)
     std_score = np.std(scores)
 
-    print(f"\nFinal Top-1 Hit Rate: {mean_score*100:.2f}% ± {std_score*100:.2f}% over {args.iterations} runs")
+    print(f"\nFinal Top-1 Hit Rate: {mean_score:.2f}% ± {std_score:.2f}% over {args.iterations} runs")
 
 if __name__ == "__main__":
     main()
