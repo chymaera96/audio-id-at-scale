@@ -84,7 +84,9 @@ class PLRectifiedFlow(pl.LightningModule):
 
 
     def configure_optimizers(self):
-        return torch.optim.AdamW(self.parameters(), lr=self.config.lr)
+        optimizer = torch.optim.AdamW(self.parameters(), lr=self.config.lr)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.config.epochs, eta_min=1e-6)
+        return [optimizer], [scheduler]
 
     def on_train_epoch_end(self):
         self.compute_metrics()
