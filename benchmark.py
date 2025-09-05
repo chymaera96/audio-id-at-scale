@@ -119,7 +119,7 @@ def main():
         hit_rates = eval_faiss(
             emb_dir=fp_dir,
             emb_dummy_dir=dummy_dir,
-            # num_dummy=num_dummy,
+            num_dummy=num_dummy,
             index_type=args.index_type,
             nogpu=args.nogpu,
             k_probe=args.k_probe,
