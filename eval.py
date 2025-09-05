@@ -164,7 +164,7 @@ def eval_faiss(emb_dir,
     if isinstance(test_ids, str) and test_ids.lower() == 'all':
         test_ids = np.arange(0, len(query) - 1, 1)
     elif isinstance(test_ids, str) and test_ids.isnumeric():
-        # np.random.seed(42)
+        np.random.seed(42)
         test_ids = np.random.permutation(len(query) - 1)[:int(test_ids)]
     elif isinstance(test_ids, str):
         test_ids = np.load(test_ids)
