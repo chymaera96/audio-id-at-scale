@@ -23,7 +23,7 @@ def get_index(index_type,
     index = faiss.IndexFlatL2(d)
 
     mode = index_type.lower()
-    print(f'Creating index: \x1b[93m{mode}\x1b[0m')
+    # print(f'Creating index: \x1b[93m{mode}\x1b[0m')
     if mode == 'l2':
         pass
     elif mode == 'ivf':
@@ -60,20 +60,20 @@ def get_index(index_type,
         raise ValueError(mode.lower())
 
     if use_gpu:
-        print('Copy index to \x1b[93mGPU\x1b[0m.')
+        # print('Copy index to \x1b[93mGPU\x1b[0m.')
         index = faiss.index_cpu_to_gpu(GPU_RESOURCES, 0, index, GPU_OPTIONS)
 
     start_time = time.time()
     if len(train_data) > max_nitem_train:
-        print('Training index using {:>3.2f} % of data...'.format(
-            100. * max_nitem_train / len(train_data)))
+        # print('Training index using {:>3.2f} % of data...'.format(
+            # 100. * max_nitem_train / len(train_data)))
         sel_tr_idx = np.random.permutation(len(train_data))
         sel_tr_idx = sel_tr_idx[:int(max_nitem_train)]
         index.train(train_data[sel_tr_idx,:])
     else:
-        print('Training index...')
+        # print('Training index...')
         index.train(train_data)
-    print('Elapsed time: {:.2f} seconds.'.format(time.time() - start_time))
+    # print('Elapsed time: {:.2f} seconds.'.format(time.time() - start_time))
 
     index.nprobe = 20
     return index
@@ -83,7 +83,7 @@ def load_memmap_data(source_dir,
                      fname,
                      append_extra_length=None,
                      shape_only=False,
-                     display=True):
+                     display=False):
     path_shape = os.path.join(source_dir, fname + '_shape.npy')
     path_data = os.path.join(source_dir, fname + '.mm')
     data_shape = np.load(path_shape)
@@ -164,6 +164,7 @@ def eval_faiss(emb_dir,
     if isinstance(test_ids, str) and test_ids.lower() == 'all':
         test_ids = np.arange(0, len(query) - 1, 1)
     elif isinstance(test_ids, str) and test_ids.isnumeric():
+        # np.random.seed(42)
         test_ids = np.random.permutation(len(query) - 1)[:int(test_ids)]
     elif isinstance(test_ids, str):
         test_ids = np.load(test_ids)
