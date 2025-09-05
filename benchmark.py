@@ -4,8 +4,8 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
-# from eval import eval_faiss
-from eval_old import eval_faiss
+from eval import eval_faiss
+# from eval_old import eval_faiss
 from generate import build_model_from_checkpoint, sample_embeddings
 
 
@@ -128,17 +128,17 @@ def main():
             # verbose=False
         )
 
-        # scores.append(hit_rates)
+        scores.append(hit_rates)
 
-    # print(f"[DEBUG] All Top-1 scores: {scores}")
-    # mean_score = np.mean(scores)
-    # std_score = np.std(scores)
+    print(f"[DEBUG] All Top-1 scores: {scores}")
+    mean_score = np.mean(scores)
+    std_score = np.std(scores)
 
-    # print(f"\nFinal Top-1 Hit Rate: {mean_score:.2f}% ± {std_score:.2f}% over {args.iterations} runs")
-    print("-------Test hit-rates-------")
-    # Create table
-    print(f'Top-1 exact hit rate = {hit_rates[0]}')
-    print(f'Top-1 near hit rate = {hit_rates[1]}')
+    print(f"\nFinal Top-1 Hit Rate: {mean_score:.2f}% ± {std_score:.2f}% over {args.iterations} runs")
+    # print("-------Test hit-rates-------")
+    # # Create table
+    # print(f'Top-1 exact hit rate = {hit_rates[0]}')
+    # print(f'Top-1 near hit rate = {hit_rates[1]}')
 
 if __name__ == "__main__":
     main()
