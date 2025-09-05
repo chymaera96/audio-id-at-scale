@@ -127,7 +127,7 @@ def main():
             # verbose=False
         )
 
-        # scores.append(top1)
+        scores.append(hit_rates)
 
     print(f"[DEBUG] All Top-1 scores: {scores}")
     mean_score = np.mean(scores)
