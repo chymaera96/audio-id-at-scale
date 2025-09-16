@@ -2,6 +2,7 @@
 # This code is sourced from https://github.com/mimbres/neural-audio-fp.git
 
 import faiss
+import faiss.contrib.torch_utils
 import time
 import numpy as np
 import os
