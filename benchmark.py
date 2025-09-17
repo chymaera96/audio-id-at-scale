@@ -86,6 +86,7 @@ def main():
     n_db = int(db_shape[0])
     num_dummy = args.num_dummy
 
+
     scores = []
 
     for _ in tqdm(range(args.iterations), desc="Benchmarking iterations"):
@@ -125,7 +126,7 @@ def main():
             k_probe=args.k_probe,
             n_centroids=args.n_centroids,
             test_ids=args.test_ids,
-            # verbose=False
+            verbose=False
         )
 
         scores.append(hit_rates)
