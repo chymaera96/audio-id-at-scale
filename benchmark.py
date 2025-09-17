@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 from eval import eval_faiss
 # from eval_old import eval_faiss
-from generate import build_model_from_checkpoint, sample_embeddings
+from generate import build_model_from_checkpoint, sample_embeddings_to_memmap
 
 
 def require_file(path):
@@ -101,10 +101,11 @@ def main():
 
             num_dummy = num_dummy if num_dummy is not None else max(5 * n_db, 100000)
             print(f"[dummy] Generating {num_dummy} synthetic embeddings (dim={input_dim})...")
-            synth = sample_embeddings(
+            sample_embeddings_to_memmap(
                 model=model,
                 input_dim=input_dim,
                 num_samples=num_dummy,
+                out_path=os.path.join(fp_dir, 'dummy_db.mm'),
                 num_steps=args.num_steps,
                 device=device,
                 mean=float(args.mean),
@@ -112,8 +113,8 @@ def main():
                 batch_size=args.batch_size,
             )
 
-            mm_path, shape = write_dummy_mm(fp_dir, synth)
-            print(f"[dummy] Wrote {shape[0]}x{shape[1]} synthetic embeddings -> {mm_path}")
+            # mm_path, shape = write_dummy_mm(fp_dir, synth)
+            # print(f"[dummy] Wrote {shape[0]}x{shape[1]} synthetic embeddings -> {mm_path}")
             dummy_dir = fp_dir
 
         # Run evaluation
