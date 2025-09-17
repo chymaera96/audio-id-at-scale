@@ -114,7 +114,8 @@ def eval_faiss(emb_dir,
                test_seq_len='1',
                k_probe=20,
                n_centroids=64,
-               verbose=True
+               verbose=True,
+               tempo=1.0  # <-- NEW
                ):
     if isinstance(test_seq_len, str):
         test_seq_len = list(map(int, test_seq_len.split()))
@@ -165,7 +166,6 @@ def eval_faiss(emb_dir,
     if isinstance(test_ids, str) and test_ids.lower() == 'all':
         test_ids = np.arange(0, len(query) - 1, 1)
     elif isinstance(test_ids, str) and test_ids.isnumeric():
-        # np.random.seed(42)
         test_ids = np.random.permutation(len(query) - 1)[:int(test_ids)]
     elif isinstance(test_ids, str):
         test_ids = np.load(test_ids)
@@ -173,7 +173,21 @@ def eval_faiss(emb_dir,
         test_ids = np.asarray(test_ids)
 
     n_test = len(test_ids)
-    gt_ids  = test_ids + db_offset
+
+    # === Ground truth index adjustment ===
+    if tempo == 1.0:
+        gt_ids = test_ids + db_offset
+    elif tempo == "auto":
+        tempo_eff = db.shape[0] / query.shape[0]
+        if verbose:
+            print(f'Estimated effective tempo: {tempo_eff:.3f}')
+        gt_ids = (test_ids * tempo_eff).astype(int) + db_offset
+    else:
+        gt_ids = (test_ids * tempo).astype(int) + db_offset
+
+    if verbose:
+        print(f'n_test: \x1b[93m{n_test:n}\x1b[0m')
+
     if verbose:
         print(f'n_test: \x1b[93m{n_test:n}\x1b[0m')
 
@@ -184,7 +198,6 @@ def eval_faiss(emb_dir,
         q = query[test_id:(test_id + 1), :]
 
         _, I = index.search(q, k_probe)
-        I[0, :] -= 0
         candidates = np.unique(I[I >= 0])
 
         _scores = np.zeros(len(candidates))
@@ -192,7 +205,12 @@ def eval_faiss(emb_dir,
             _scores[ci] = float(np.dot(q[0], fake_recon_index[cid:cid + 1, :].T))
 
         pred_ids = candidates[np.argsort(-_scores)[:1]]
-        top1_exact[ti, 0] = int(gt_id == pred_ids[0])
+
+        # exact check if tempo=1.0, allow small tolerance if tempo!=1.0
+        if tempo == 1.0:
+            top1_exact[ti, 0] = int(gt_id == pred_ids[0])
+        else:
+            top1_exact[ti, 0] = int(np.abs(gt_id - pred_ids[0]) <= 2)
 
     top1_exact_rate = float(100. * np.mean(top1_exact, axis=0)[0])
 
