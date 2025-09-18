@@ -175,15 +175,18 @@ def eval_faiss(emb_dir,
     n_test = len(test_ids)
 
     # === Ground truth index adjustment ===
+    n_test = len(test_ids)
+
     if tempo == 1.0:
         gt_ids = test_ids + db_offset
-    elif tempo == "auto":
+    elif isinstance(tempo, str) and tempo.lower() == "auto":
         tempo_eff = db.shape[0] / query.shape[0]
         if verbose:
             print(f'Estimated effective tempo: {tempo_eff:.3f}')
         gt_ids = (test_ids * tempo_eff).astype(int) + db_offset
     else:
-        gt_ids = (test_ids * tempo).astype(int) + db_offset
+        tempo_val = float(tempo)  # make sure it's numeric
+        gt_ids = (test_ids * tempo_val).astype(int) + db_offset
 
     if verbose:
         print(f'n_test: \x1b[93m{n_test:n}\x1b[0m')
