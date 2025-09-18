@@ -128,7 +128,7 @@ def main():
             n_centroids=args.n_centroids,
             test_ids=args.test_ids,
             verbose=True,
-            tempo=2.0
+            tempo="auto"
         )
 
         scores.append(hit_rates)
