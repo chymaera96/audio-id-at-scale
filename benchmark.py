@@ -127,7 +127,8 @@ def main():
             k_probe=args.k_probe,
             n_centroids=args.n_centroids,
             test_ids=args.test_ids,
-            verbose=False
+            verbose=True,
+            tempo=2.0
         )
 
         scores.append(hit_rates)
