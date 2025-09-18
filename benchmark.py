@@ -135,7 +135,7 @@ def main():
             k_probe=args.k_probe,
             n_centroids=args.n_centroids,
             test_ids=args.test_ids,
-            verbose=True,
+            verbose=False,
             tempo=args.tempo
         )
 
