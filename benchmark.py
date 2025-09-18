@@ -61,6 +61,8 @@ def main():
                         default="cuda" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--iterations", type=int, default=1,
                         help="Number of evaluation iterations to run")
+    parser.add_argument("--tempo", default=1.0,
+                        help="Tempo scaling factor for queries (default=1.0)")
 
     # Evaluation params
     parser.add_argument("--index_type", default="ivfpq",
@@ -128,7 +130,7 @@ def main():
             n_centroids=args.n_centroids,
             test_ids=args.test_ids,
             verbose=True,
-            tempo="auto"
+            tempo=args.tempo
         )
 
         scores.append(hit_rates)
