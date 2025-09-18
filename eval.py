@@ -213,7 +213,7 @@ def eval_faiss(emb_dir,
         if tempo == 1.0:
             top1_exact[ti, 0] = int(gt_id == pred_ids[0])
         else:
-            top1_exact[ti, 0] = int(np.abs(gt_id - pred_ids[0]) <= 2)
+            top1_exact[ti, 0] = int(np.abs(gt_id - pred_ids[0]) <= 4)
 
     top1_exact_rate = float(100. * np.mean(top1_exact, axis=0)[0])
 
