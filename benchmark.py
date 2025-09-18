@@ -36,6 +36,12 @@ def write_dummy_mm(fp_dir: str, synth: torch.Tensor):
     np.save(os.path.join(fp_dir, 'dummy_db_shape.npy'), shape)
     return mm_path, shape
 
+def parse_tempo(value):
+    try:
+        return float(value)  
+    except ValueError:
+        return value
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -61,7 +67,7 @@ def main():
                         default="cuda" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--iterations", type=int, default=1,
                         help="Number of evaluation iterations to run")
-    parser.add_argument("--tempo", default=1.0,
+    parser.add_argument("--tempo", type=parse_tempo, default=1.0,
                         help="Tempo scaling factor for queries (default=1.0)")
 
     # Evaluation params
