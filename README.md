@@ -1,2 +1,2 @@
 # audio-id-at-scale
-A Framework for evaluation of Scalability of Neural Audio Fingerprinting Methods
+A framework to measure scalabiltiy of neural audio fingerprinting systems. This is the official repository for our ICASSP 20206 submission "SCALABLE EVALUATION FOR AUDIO IDENTIFICATION VIA SYNTHETIC LATENT FINGERPRINT GENERATION". We are still tinkering, but the codebase, installment guides and pe-trained models will be made available very soon!
