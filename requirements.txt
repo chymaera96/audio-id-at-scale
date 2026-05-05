@@ -1,0 +1,7 @@
+torch
+pytorch-lightning
+numpy
+scipy
+tqdm
+wandb
+faiss-gpu

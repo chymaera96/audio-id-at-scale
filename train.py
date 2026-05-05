@@ -155,9 +155,9 @@ def train(config):
     model = PLRectifiedFlow(config, real_fingerprints=all_data, mean=mean, std=std)
     # model = PLRectifiedFlow(config, real_fingerprints=all_data)
 
-    wandb_logger = WandbLogger(project=config.project, id=config.id, config=config)
-
-    wandb_logger = WandbLogger(project=config.project, id=config.id, config=config)
+    logger = False
+    if config.wandb:
+        logger = WandbLogger(project=config.project, id=config.id, config=config)
 
     # --- checkpoints ---
     best_dir = f"{config.out_dir}/best"
@@ -185,7 +185,7 @@ def train(config):
 
     trainer = pl.Trainer(
         max_epochs=config.epochs,
-        logger=wandb_logger,
+        logger=logger,
         default_root_dir=config.out_dir,
         log_every_n_steps=10,
         accelerator="auto",
@@ -212,6 +212,8 @@ if __name__ == "__main__":
     parser.add_argument("--project", type=str, default="audio-id-at-scale")
     parser.add_argument("--out_dir", type=str, default="checkpoints")
     parser.add_argument("--id", type=str, default=None)
+    parser.add_argument("--wandb", action="store_true",
+                        help="Enable Weights & Biases logging")
 
     args = parser.parse_args()
     pl.seed_everything(42)

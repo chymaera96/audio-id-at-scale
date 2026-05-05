@@ -1,0 +1,22 @@
+{
+  "nafp": {
+    "system": "NAFP",
+    "mean": 0.000703,
+    "std": 0.088386
+  },
+  "nmfp": {
+    "system": "NMFP",
+    "mean": -0.000410,
+    "std": 0.088388
+  },
+  "grafp": {
+    "system": "GraFP",
+    "mean": -0.000263,
+    "std": 0.088348
+  },
+  "peaknetfp": {
+    "system": "PeakNetFP",
+    "mean": 0.033622,
+    "std": 0.081744
+  }
+}
